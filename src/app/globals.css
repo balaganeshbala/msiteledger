@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Force light theme: dark: utilities only activate under a .dark ancestor,
+   which nothing in this app ever adds. */
+@custom-variant dark (&:is(.dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -12,11 +16,8 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  font-size: 112.5%; /* 18px base instead of 16px, scales the whole Tailwind type ramp up */
 }
 
 body {
