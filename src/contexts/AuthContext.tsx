@@ -11,11 +11,11 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  updateProfile,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut as firebaseSignOut,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
   type User,
-  type ConfirmationResult,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
@@ -23,11 +23,12 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   loginWithEmail: (email: string, password: string) => Promise<void>;
-  signupWithEmail: (email: string, password: string) => Promise<void>;
-  sendPhoneOtp: (
-    phoneNumber: string,
-    recaptchaContainerId: string
-  ) => Promise<ConfirmationResult>;
+  signupWithEmail: (
+    email: string,
+    password: string,
+    name: string
+  ) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -49,18 +50,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signupWithEmail = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+  const signupWithEmail = async (
+    email: string,
+    password: string,
+    name: string
+  ) => {
+    const credential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+    await updateProfile(credential.user, { displayName: name });
+    setUser(
+      Object.assign(
+        Object.create(Object.getPrototypeOf(credential.user)),
+        credential.user
+      )
+    );
   };
 
-  const sendPhoneOtp = async (
-    phoneNumber: string,
-    recaptchaContainerId: string
-  ): Promise<ConfirmationResult> => {
-    const verifier = new RecaptchaVerifier(auth, recaptchaContainerId, {
-      size: "invisible",
-    });
-    return signInWithPhoneNumber(auth, phoneNumber, verifier);
+  const loginWithGoogle = async () => {
+    await signInWithPopup(auth, new GoogleAuthProvider());
   };
 
   const logout = async () => {
@@ -69,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, loginWithEmail, signupWithEmail, sendPhoneOtp, logout }}
+      value={{ user, loading, loginWithEmail, signupWithEmail, loginWithGoogle, logout }}
     >
       {children}
     </AuthContext.Provider>

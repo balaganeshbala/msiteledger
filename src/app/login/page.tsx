@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { HardHat, Mail, Phone, Languages } from "lucide-react";
-import type { ConfirmationResult } from "firebase/auth";
+import { Languages } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Button from "@/components/ui/Button";
@@ -11,24 +10,18 @@ import Input from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
 
 type Mode = "login" | "signup";
-type Method = "email" | "phone";
 
 export default function LoginPage() {
-  const { user, loading, loginWithEmail, signupWithEmail, sendPhoneOtp } =
+  const { user, loading, loginWithEmail, signupWithEmail, loginWithGoogle } =
     useAuth();
   const { t, language, toggleLanguage } = useLanguage();
   const router = useRouter();
 
   const [mode, setMode] = useState<Mode>("login");
-  const [method, setMethod] = useState<Method>("email");
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(
-    null
-  );
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -47,7 +40,7 @@ export default function LoginPage() {
       if (mode === "login") {
         await loginWithEmail(email, password);
       } else {
-        await signupWithEmail(email, password);
+        await signupWithEmail(email, password, name.trim());
       }
       router.replace("/sites");
     } catch (err) {
@@ -57,30 +50,14 @@ export default function LoginPage() {
     }
   };
 
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleSignIn = async () => {
     setError("");
     setBusy(true);
     try {
-      const result = await sendPhoneOtp(phone, "recaptcha-container");
-      setConfirmation(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send OTP");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setBusy(true);
-    try {
-      if (!confirmation) return;
-      await confirmation.confirm(otp);
+      await loginWithGoogle();
       router.replace("/sites");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid OTP");
+      setError(err instanceof Error ? err.message : "Failed to sign in with Google");
     } finally {
       setBusy(false);
     }
@@ -105,9 +82,12 @@ export default function LoginPage() {
       </button>
 
       <div className="mb-6 flex flex-col items-center gap-2">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-lg">
-          <HardHat className="h-7 w-7" />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/app-icon.png"
+          alt=""
+          className="h-14 w-14 rounded-2xl shadow-lg"
+        />
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
           {t("appName")}
         </h1>
@@ -140,101 +120,79 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <div className="mb-4 flex gap-2">
-          <button
-            onClick={() => {
-              setMethod("email");
-              setConfirmation(null);
-              setError("");
-            }}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-medium ${
-              method === "email"
-                ? "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400"
-                : "border-slate-200 text-slate-500 dark:border-slate-700"
-            }`}
-          >
-            <Mail className="h-3.5 w-3.5" />
-            {t("email")}
-          </button>
-          <button
-            onClick={() => {
-              setMethod("phone");
-              setError("");
-            }}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-medium ${
-              method === "phone"
-                ? "border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400"
-                : "border-slate-200 text-slate-500 dark:border-slate-700"
-            }`}
-          >
-            <Phone className="h-3.5 w-3.5" />
-            {t("phoneNumber")}
-          </button>
-        </div>
-
         {error && (
           <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-400">
             {error}
           </div>
         )}
 
-        {method === "email" && (
-          <form onSubmit={handleEmailSubmit} className="flex flex-col gap-3">
+        <form onSubmit={handleEmailSubmit} className="flex flex-col gap-3">
+          {mode === "signup" && (
             <Input
-              label={t("email")}
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-            />
-            <Input
-              label={t("password")}
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-            <Button type="submit" loading={busy} fullWidth>
-              {mode === "login" ? t("login") : t("signup")}
-            </Button>
-          </form>
-        )}
-
-        {method === "phone" && !confirmation && (
-          <form onSubmit={handleSendOtp} className="flex flex-col gap-3">
-            <Input
-              label={t("phoneNumber")}
-              type="tel"
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91XXXXXXXXXX"
-            />
-            <div id="recaptcha-container" />
-            <Button type="submit" loading={busy} fullWidth>
-              {t("sendOtp")}
-            </Button>
-          </form>
-        )}
-
-        {method === "phone" && confirmation && (
-          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-3">
-            <Input
-              label={t("otpCode")}
+              label={t("fullName")}
               type="text"
               required
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              placeholder="123456"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="John Doe"
             />
-            <Button type="submit" loading={busy} fullWidth>
-              {t("verifyOtp")}
-            </Button>
-          </form>
-        )}
+          )}
+          <Input
+            label={t("email")}
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+          />
+          <Input
+            label={t("password")}
+            type="password"
+            required
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+          />
+          <Button type="submit" loading={busy} fullWidth>
+            {mode === "login" ? t("login") : t("signup")}
+          </Button>
+        </form>
+
+        <div className="my-4 flex items-center gap-3">
+          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+          <span className="text-xs text-slate-400">{t("or")}</span>
+          <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+        </div>
+
+        <Button
+          type="button"
+          variant="secondary"
+          fullWidth
+          loading={busy}
+          onClick={handleGoogleSignIn}
+          className="flex items-center justify-center gap-2"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 48 48" aria-hidden="true">
+            <path
+              fill="#FFC107"
+              d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"
+            />
+            <path
+              fill="#FF3D00"
+              d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"
+            />
+            <path
+              fill="#4CAF50"
+              d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"
+            />
+            <path
+              fill="#1976D2"
+              d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"
+            />
+          </svg>
+          {t("continueWithGoogle")}
+        </Button>
       </Card>
     </div>
   );
