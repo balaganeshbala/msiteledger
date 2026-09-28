@@ -16,7 +16,7 @@ Full-stack construction site financial management & daily labour salary tracker.
 - Project ID: `msiteledger` (real project, not a placeholder)
 - Real config lives in `.env.local` (gitignored — never commit it). `.env.local.example` has the empty template.
 - Email/Password auth provider is enabled. Phone OTP auth code exists (`sendPhoneOtp` in `AuthContext`) but has not been tested against a real phone number/reCAPTCHA yet.
-- **Firestore is currently in test mode** (open read/write for any signed-in user) — `firestore.rules` in this repo enforces real per-user isolation (`createdBy == request.auth.uid`) but has **not been deployed**. Deploy with `firebase deploy --only firestore:rules` before this app has real users or sensitive data.
+- `firestore.rules` (enforcing per-user isolation, `createdBy == request.auth.uid`) is deployed and active — Firestore is no longer in open test mode.
 - To run locally: `npm run dev`, then sign up with any email/password at `/login` — it creates a real (free-tier) Firebase Auth user.
 
 ## Data model (`src/types/index.ts`)

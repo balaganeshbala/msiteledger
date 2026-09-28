@@ -224,6 +224,7 @@ export default function LabourPage() {
               {sites.map((site) => (
                 <option key={site.id} value={site.id}>
                   {site.siteName}
+                  {site.clientName ? ` — ${site.clientName}` : ""}
                 </option>
               ))}
             </select>

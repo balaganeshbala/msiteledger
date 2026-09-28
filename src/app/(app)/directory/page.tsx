@@ -183,6 +183,7 @@ export default function DirectoryPage() {
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:items-end">
                       <Input
                         label={t("workerName")}
+                        placeholder={t("workerNameHint")}
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         autoFocus
@@ -190,12 +191,14 @@ export default function DirectoryPage() {
                       />
                       <Input
                         label={t("phone")}
+                        placeholder={t("phoneHint")}
                         type="tel"
                         value={editPhone}
                         onChange={(e) => setEditPhone(e.target.value)}
                       />
                       <Input
                         label={t("rate")}
+                        placeholder={t("rateHint")}
                         type="number"
                         min={0}
                         value={editRate}
@@ -301,6 +304,7 @@ export default function DirectoryPage() {
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-end">
                       <Input
                         label={t("siteName")}
+                        placeholder={t("siteNameHint")}
                         value={editSiteName}
                         onChange={(e) => setEditSiteName(e.target.value)}
                         autoFocus
@@ -308,6 +312,7 @@ export default function DirectoryPage() {
                       />
                       <Input
                         label={t("clientName")}
+                        placeholder={t("clientNameHint")}
                         value={editClientName}
                         onChange={(e) => setEditClientName(e.target.value)}
                       />
@@ -398,6 +403,7 @@ export default function DirectoryPage() {
         <form onSubmit={handleAddLabour} className="flex flex-col gap-3">
           <Input
             label={t("workerName")}
+            placeholder={t("workerNameHint")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
@@ -405,12 +411,14 @@ export default function DirectoryPage() {
           />
           <Input
             label={t("phone")}
+            placeholder={t("phoneHint")}
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
           <Input
             label={t("rate")}
+            placeholder={t("rateHint")}
             type="number"
             min={0}
             value={dailyRate}
@@ -432,6 +440,7 @@ export default function DirectoryPage() {
         <form onSubmit={handleAddSite} className="flex flex-col gap-3">
           <Input
             label={t("siteName")}
+            placeholder={t("siteNameHint")}
             value={siteName}
             onChange={(e) => setSiteName(e.target.value)}
             autoFocus
@@ -439,6 +448,7 @@ export default function DirectoryPage() {
           />
           <Input
             label={t("clientName")}
+            placeholder={t("clientNameHint")}
             value={clientName}
             onChange={(e) => setClientName(e.target.value)}
           />
