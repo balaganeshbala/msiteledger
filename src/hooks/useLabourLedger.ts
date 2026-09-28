@@ -8,33 +8,29 @@ import {
   onSnapshot,
   getDocs,
   doc,
-  writeBatch,
+  setDoc,
+  deleteDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { DailyLabourLog } from "@/types";
-import {
-  getWeekStartDate,
-  computeEntry,
-  isZeroActivity,
-} from "@/lib/labourCalculations";
+import { getWeekStartDate, maxAdvanceToday } from "@/lib/labourCalculations";
 
 interface SaveEntryParams {
   labourId: string;
   date: string;
-  workedToday: boolean;
-  /** The site worked at, or null on a non-work day (advance not tied to any site). */
-  siteId: string | null;
+  siteId: string;
   extraAdvance: number;
   dailyRate: number;
 }
 
 /**
- * A worker's full ledger across every site, in date order. The running
- * balance is a single global figure per worker: salary earned at any site
- * pays down the same advance debt, and advances given on a non-work day
- * (no site attached) draw against it too.
+ * A worker's full log history. Each week is self-contained: salary is
+ * earned per worked day but handed over as one lump sum on Saturday, and
+ * any advance taken during the week is deducted from that same week's
+ * payout. Nothing carries over between weeks, so saving one day's entry
+ * never touches another day's stored values.
  */
 export function useLabourLedger(labourId: string | null) {
   const { user } = useAuth();
@@ -66,90 +62,58 @@ export function useLabourLedger(labourId: string | null) {
   }, [user, labourId]);
 
   const saveEntry = useCallback(
-    async ({ labourId, date, workedToday, siteId, extraAdvance, dailyRate }: SaveEntryParams) => {
+    async ({ labourId, date, siteId, extraAdvance, dailyRate }: SaveEntryParams) => {
       if (!user) throw new Error("Not authenticated");
 
-      const q = query(
+      const weekStartDate = getWeekStartDate(date);
+      const weekQuery = query(
         collection(db, "dailyLabourLogs"),
         where("createdBy", "==", user.uid),
-        where("labourId", "==", labourId)
+        where("labourId", "==", labourId),
+        where("weekStartDate", "==", weekStartDate)
       );
-      const snap = await getDocs(q);
-      const existing = snap.docs.map((d) => ({
+      const weekSnap = await getDocs(weekQuery);
+      const weekDocs = weekSnap.docs.map((d) => ({
         id: d.id,
         ...(d.data() as Omit<DailyLabourLog, "id">),
       }));
 
-      const others = existing.filter((e) => e.date !== date);
-      const zeroActivity = isZeroActivity(workedToday, extraAdvance);
+      const existing = weekDocs.find((d) => d.date === date);
+      const otherWeekLogs = weekDocs.filter((d) => d.date !== date);
 
-      type WorkingEntry = Pick<
-        DailyLabourLog,
-        "id" | "date" | "workedToday" | "extraAdvance"
-      > & { siteId: string | null };
-
-      const working: WorkingEntry[] = others.map((e) => ({
-        id: e.id,
-        date: e.date,
-        workedToday: e.workedToday,
-        extraAdvance: e.extraAdvance,
-        siteId: e.siteId ?? null,
-      }));
-
-      if (!zeroActivity) {
-        const currentExisting = existing.find((e) => e.date === date);
-        working.push({
-          id: currentExisting?.id ?? "",
-          date,
-          workedToday,
-          extraAdvance: extraAdvance || 0,
-          siteId: workedToday ? siteId : null,
-        });
-      }
-
-      working.sort((a, b) => a.date.localeCompare(b.date));
-
-      const batch = writeBatch(db);
-      let previousBalance = 0;
-
-      for (const entry of working) {
-        const { dailySalary, totalCashPaid, runningBalance } = computeEntry(
-          entry.workedToday,
-          dailyRate,
-          entry.extraAdvance,
-          previousBalance
+      const available = maxAdvanceToday(otherWeekLogs, dailyRate);
+      if (extraAdvance > available) {
+        throw new Error(
+          `Advance exceeds this week's remaining salary (max ₹${available})`
         );
-        previousBalance = runningBalance;
-
-        const ref = entry.id
-          ? doc(db, "dailyLabourLogs", entry.id)
-          : doc(collection(db, "dailyLabourLogs"));
-
-        batch.set(ref, {
-          siteId: entry.siteId,
-          labourId,
-          date: entry.date,
-          weekStartDate: getWeekStartDate(entry.date),
-          workedToday: entry.workedToday,
-          dailySalary,
-          extraAdvance: entry.extraAdvance,
-          totalCashPaid,
-          runningBalance,
-          createdBy: user.uid,
-          createdAt: serverTimestamp(),
-        });
       }
 
-      if (zeroActivity) {
-        const toDelete = existing.find((e) => e.date === date);
-        if (toDelete) {
-          batch.delete(doc(db, "dailyLabourLogs", toDelete.id));
-        }
-      }
+      const ref = existing
+        ? doc(db, "dailyLabourLogs", existing.id)
+        : doc(collection(db, "dailyLabourLogs"));
 
-      await batch.commit();
+      await setDoc(ref, {
+        siteId,
+        labourId,
+        date,
+        weekStartDate,
+        dailySalary: dailyRate,
+        extraAdvance,
+        createdBy: user.uid,
+        createdAt: serverTimestamp(),
+      });
     },
     [user]
+  );
+
+  const deleteEntry = useCallback(
+    async (date: string) => {
+      if (!user) throw new Error("Not authenticated");
+      const existing = logs.find((l) => l.date === date);
+      if (!existing) return;
+      await deleteDoc(doc(db, "dailyLabourLogs", existing.id));
+    },
+    [user, logs]
   );
 
   const getWeeklyLogs = useCallback(
@@ -158,13 +122,11 @@ export function useLabourLedger(labourId: string | null) {
     [logs]
   );
 
-  const currentBalance = logs.length ? logs[logs.length - 1].runningBalance : 0;
-
   return {
     logs,
     loading,
     saveEntry,
+    deleteEntry,
     getWeeklyLogs,
-    currentBalance,
   };
 }

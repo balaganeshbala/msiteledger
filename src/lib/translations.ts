@@ -37,13 +37,15 @@ export const translations = {
     netCash: "Net Cash",
     backToSites: "Back to Sites",
     viewOnlyLabourNote:
-      "Add or edit daily entries from the Labour tab. Only earned salary counts towards a site's cost — advances are a personal ledger with the worker, not a site expense.",
-    anySite: "Any site (not tied to a specific site)",
+      "Add or edit daily entries from the Labour tab. Only earned salary counts towards a site's cost — advances are deducted from the worker's weekly payout, not a site expense.",
     weekOf: "Week of",
     siteHasRecordsError:
       "This site has recorded expenses, receipts, or labour charges and can't be deleted.",
+    labourHasRecordsError:
+      "This worker has recorded daily labour entries and can't be deleted. Mark them inactive instead.",
     confirmDeleteSite: "Delete this site? This cannot be undone.",
     confirmDeleteWorker: "Delete this worker? This cannot be undone.",
+    confirmDeleteEntry: "Delete this entry? This cannot be undone.",
 
     // Dashboard
     totalReceipts: "Total Receipts",
@@ -54,24 +56,23 @@ export const translations = {
     noActivity: "No activity yet",
 
     // Daily Labour Entry
-    dailyLabourEntry: "Daily Labour Entry",
+    dailyLabourEntry: "Worked Day Entry",
+    addEntry: "Add Entry",
     weeklyLedger: "Weekly Ledger",
     date: "Date",
     selectLabour: "Select Worker",
     searchLabour: "Search worker by name...",
     noLabourFound: "No worker found",
-    workedToday: "Worked Today?",
     dailySalary: "Daily Salary",
-    extraAdvance: "Extra Advance",
-    totalCashPaid: "Amount to Pay",
-    runningBalance: "Running Balance",
-    balanceOwedToLabour: "Unpaid wage owed to worker",
-    balanceOwedByLabour: "Advance owed by worker",
-    balanceSettled: "Settled",
+    extraAdvance: "Advance (This Week)",
     saveEntry: "Save Entry",
     weeklyMatrix: "Sun – Sat Breakdown",
     noEntryForDay: "No entry",
-    previousBalance: "Previous Balance",
+    totalSalaryThisWeek: "Total Salary",
+    totalAdvanceThisWeek: "Total Advance",
+    netPayableSaturday: "To Pay on End of Week",
+    advanceAvailable: "Available to advance",
+    advanceExceedsAvailable: "Advance can't exceed this week's remaining salary",
 
     // Site Expenses
     expenseTitle: "Title / Description",
@@ -93,7 +94,7 @@ export const translations = {
     labourWorkers: "Labour Workers",
     constructionSites: "Construction Sites",
     workerName: "Worker Name",
-    phone: "Phone",
+    phone: "Phone (optional)",
     rate: "Daily Rate",
     active: "Active",
     inactive: "Inactive",
@@ -117,8 +118,8 @@ export const translations = {
     confirm: "Confirm",
     confirmDelete: "Are you sure you want to delete this?",
     required: "This field is required",
-    selectSitePrompt: "Please select or create a site to continue",
-    createFirstSite: "Create your first site",
+    selectSitePrompt: "No sites yet — add one from the Master Directory to continue",
+    createFirstSite: "Go to Master Directory",
     title: "Title",
     description: "Description",
 
@@ -169,13 +170,15 @@ export const translations = {
     netCash: "கைவசம் பணம்",
     backToSites: "தளங்களுக்குத் திரும்பு",
     viewOnlyLabourNote:
-      "நாள் பதிவுகளைச் சேர்க்க/திருத்த 'நாள் கூலி' தாவலைப் பயன்படுத்தவும். சம்பாதித்த சம்பளம் மட்டுமே தளத்தின் செலவாகக் கணக்கிடப்படும் — முன்பணம் தொழிலாளியுடனான தனிப்பட்ட கணக்கு, தளச் செலவு அல்ல.",
-    anySite: "குறிப்பிட்ட தளம் இல்லை (பொது முன்பணம்)",
+      "நாள் பதிவுகளைச் சேர்க்க/திருத்த 'நாள் கூலி' தாவலைப் பயன்படுத்தவும். சம்பாதித்த சம்பளம் மட்டுமே தளத்தின் செலவாகக் கணக்கிடப்படும் — முன்பணம் தொழிலாளியின் வார சம்பளத்திலிருந்து கழிக்கப்படும், தளச் செலவு அல்ல.",
     weekOf: "வாரம்",
     siteHasRecordsError:
       "இந்தத் தளத்தில் செலவுகள், வரவுகள் அல்லது கூலி பதிவுகள் உள்ளன — நீக்க முடியாது.",
+    labourHasRecordsError:
+      "இந்தத் தொழிலாளிக்கு நாள் கூலி பதிவுகள் உள்ளன — நீக்க முடியாது. பதிலாக செயலற்றதாக குறிக்கவும்.",
     confirmDeleteSite: "இந்தத் தளத்தை நீக்கவா? இதை மீண்டும் செயல்தவிர்க்க முடியாது.",
     confirmDeleteWorker: "இந்தத் தொழிலாளியை நீக்கவா? இதை மீண்டும் செயல்தவிர்க்க முடியாது.",
+    confirmDeleteEntry: "இந்தப் பதிவை நீக்கவா? இதை மீண்டும் செயல்தவிர்க்க முடியாது.",
 
     // Dashboard
     totalReceipts: "மொத்த வரவு",
@@ -186,24 +189,23 @@ export const translations = {
     noActivity: "இன்னும் செயல்பாடு இல்லை",
 
     // Daily Labour Entry
-    dailyLabourEntry: "நாள் கூலி பதிவு",
+    dailyLabourEntry: "வேலை நாள் பதிவு",
+    addEntry: "பதிவு சேர்",
     weeklyLedger: "வாராந்திர கணக்கு",
     date: "தேதி",
     selectLabour: "தொழிலாளியைத் தேர்ந்தெடு",
     searchLabour: "பெயர் மூலம் தொழிலாளியைத் தேடு...",
     noLabourFound: "தொழிலாளி கிடைக்கவில்லை",
-    workedToday: "இன்று வேலை செய்தாரா?",
     dailySalary: "நாள் சம்பளம்",
-    extraAdvance: "கூடுதல் முன்பணம்",
-    totalCashPaid: "செலுத்த வேண்டிய தொகை",
-    runningBalance: "நடப்பு இருப்பு",
-    balanceOwedToLabour: "தொழிலாளிக்கு செலுத்த வேண்டிய சம்பளம்",
-    balanceOwedByLabour: "தொழிலாளி திருப்பிச் செலுத்த வேண்டிய முன்பணம்",
-    balanceSettled: "தீர்க்கப்பட்டது",
+    extraAdvance: "முன்பணம் (இந்த வாரம்)",
     saveEntry: "பதிவைச் சேமி",
     weeklyMatrix: "ஞாயிறு – சனி பிரிவு",
     noEntryForDay: "பதிவு இல்லை",
-    previousBalance: "முந்தைய இருப்பு",
+    totalSalaryThisWeek: "மொத்த சம்பளம்",
+    totalAdvanceThisWeek: "மொத்த முன்பணம்",
+    netPayableSaturday: "வார இறுதியில் செலுத்த வேண்டியது",
+    advanceAvailable: "முன்பணமாகக் கொடுக்கக்கூடிய தொகை",
+    advanceExceedsAvailable: "இந்த வாரத்தின் மீதமுள்ள சம்பளத்தை விட முன்பணம் அதிகமாக இருக்க முடியாது",
 
     // Site Expenses
     expenseTitle: "தலைப்பு / விளக்கம்",
@@ -225,7 +227,7 @@ export const translations = {
     labourWorkers: "கூலித் தொழிலாளர்கள்",
     constructionSites: "கட்டுமான தளங்கள்",
     workerName: "தொழிலாளியின் பெயர்",
-    phone: "தொலைபேசி",
+    phone: "தொலைபேசி (விருப்பம்)",
     rate: "நாள் கூலி விகிதம்",
     active: "செயலில்",
     inactive: "செயலில் இல்லை",
@@ -249,8 +251,8 @@ export const translations = {
     confirm: "உறுதிப்படுத்து",
     confirmDelete: "இதை நீக்க விரும்புகிறீர்களா?",
     required: "இந்த புலம் அவசியம்",
-    selectSitePrompt: "தொடர தளத்தைத் தேர்ந்தெடுக்கவும் அல்லது உருவாக்கவும்",
-    createFirstSite: "உங்கள் முதல் தளத்தை உருவாக்கவும்",
+    selectSitePrompt: "இன்னும் தளங்கள் இல்லை — தொடர முதன்மை பட்டியலில் ஒன்றைச் சேர்க்கவும்",
+    createFirstSite: "முதன்மை பட்டியலுக்குச் செல்",
     title: "தலைப்பு",
     description: "விளக்கம்",
 

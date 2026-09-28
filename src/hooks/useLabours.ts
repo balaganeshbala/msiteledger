@@ -5,7 +5,9 @@ import {
   collection,
   query,
   where,
+  limit,
   onSnapshot,
+  getDocs,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -15,6 +17,14 @@ import {
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Labour } from "@/types";
+
+/** Thrown by removeLabour when the worker still has daily labour logs. */
+export class LabourHasRecordsError extends Error {
+  constructor() {
+    super("Worker has recorded daily labour entries");
+    this.name = "LabourHasRecordsError";
+  }
+}
 
 export function useLabours() {
   const { user } = useAuth();
@@ -60,6 +70,21 @@ export function useLabours() {
   };
 
   const removeLabour = async (id: string) => {
+    if (!user) throw new Error("Not authenticated");
+
+    const logsSnap = await getDocs(
+      query(
+        collection(db, "dailyLabourLogs"),
+        where("createdBy", "==", user.uid),
+        where("labourId", "==", id),
+        limit(1)
+      )
+    );
+
+    if (!logsSnap.empty) {
+      throw new LabourHasRecordsError();
+    }
+
     await deleteDoc(doc(db, "labours", id));
   };
 

@@ -18,16 +18,14 @@ export interface Labour {
 
 export interface DailyLabourLog {
   id: string;
-  /** null when the day wasn't worked — an advance not tied to any site. */
-  siteId: string | null;
+  siteId: string;
   labourId: string;
   date: string; // YYYY-MM-DD
   weekStartDate: string; // Sunday YYYY-MM-DD
-  workedToday: boolean;
+  /** Always the labour's dailyRate — a doc only exists for a day actually worked. */
   dailySalary: number;
+  /** Cash advanced against this week's salary; paid out with the rest on Saturday. */
   extraAdvance: number;
-  totalCashPaid: number;
-  runningBalance: number;
   createdBy: string;
   createdAt?: number;
 }

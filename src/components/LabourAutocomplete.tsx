@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Search, User } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Labour } from "@/types";
@@ -17,7 +18,11 @@ export default function LabourAutocomplete({
   const { t } = useLanguage();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(
+    null
+  );
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selected = labours.find((l) => l.id === selectedId) ?? null;
 
@@ -28,12 +33,34 @@ export default function LabourAutocomplete({
     return pool.filter((l) => l.name.toLowerCase().includes(q));
   }, [labours, query]);
 
+  const updateRect = useCallback(() => {
+    const el = fieldRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setRect({ top: r.bottom + 4, left: r.left, width: r.width });
+  }, []);
+
+  // Dropdown is portaled to <body> and positioned fixed, so it always
+  // floats above the field instead of being cropped by a scrollable
+  // ancestor (e.g. a modal). Its position has to be recomputed whenever
+  // anything that could move the field scrolls or resizes.
+  useEffect(() => {
+    if (!open) return;
+    updateRect();
+    window.addEventListener("scroll", updateRect, true);
+    window.addEventListener("resize", updateRect);
+    return () => {
+      window.removeEventListener("scroll", updateRect, true);
+      window.removeEventListener("resize", updateRect);
+    };
+  }, [open, updateRect]);
+
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
+      const target = e.target as Node;
+      const insideField = fieldRef.current?.contains(target);
+      const insideDropdown = dropdownRef.current?.contains(target);
+      if (!insideField && !insideDropdown) {
         setOpen(false);
       }
     }
@@ -42,11 +69,11 @@ export default function LabourAutocomplete({
   }, []);
 
   return (
-    <div className="relative flex flex-col gap-1.5" ref={containerRef}>
+    <div className="flex flex-col gap-1.5">
       <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
         {t("selectLabour")}
       </label>
-      <div className="relative">
+      <div className="relative" ref={fieldRef}>
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
           value={open ? query : selected?.name ?? query}
@@ -63,35 +90,43 @@ export default function LabourAutocomplete({
         />
       </div>
 
-      {open && (
-        <div className="absolute top-full z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
-          {results.length === 0 ? (
-            <p className="px-3 py-2.5 text-sm text-slate-500">
-              {t("noLabourFound")}
-            </p>
-          ) : (
-            results.map((l) => (
-              <button
-                key={l.id}
-                onClick={() => {
-                  onSelect(l.id);
-                  setQuery("");
-                  setOpen(false);
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
-              >
-                <User className="h-3.5 w-3.5 text-slate-400" />
-                <span className="font-medium text-slate-800 dark:text-slate-100">
-                  {l.name}
-                </span>
-                <span className="ml-auto text-xs text-slate-500">
-                  ₹{l.dailyRate}/day
-                </span>
-              </button>
-            ))
-          )}
-        </div>
-      )}
+      {open &&
+        rect &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            style={{ top: rect.top, left: rect.left, width: rect.width }}
+            onClick={(e) => e.stopPropagation()}
+            className="fixed z-[100] max-h-64 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900"
+          >
+            {results.length === 0 ? (
+              <p className="px-3 py-2.5 text-sm text-slate-500">
+                {t("noLabourFound")}
+              </p>
+            ) : (
+              results.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => {
+                    onSelect(l.id);
+                    setQuery("");
+                    setOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                  <User className="h-3.5 w-3.5 text-slate-400" />
+                  <span className="font-medium text-slate-800 dark:text-slate-100">
+                    {l.name}
+                  </span>
+                  <span className="ml-auto text-xs text-slate-500">
+                    ₹{l.dailyRate}/day
+                  </span>
+                </button>
+              ))
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

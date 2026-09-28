@@ -4,13 +4,14 @@ import { useState } from "react";
 import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSiteContext } from "@/contexts/SiteContext";
-import { useLabours } from "@/hooks/useLabours";
+import { useLabours, LabourHasRecordsError } from "@/hooks/useLabours";
 import { SiteHasRecordsError } from "@/hooks/useSites";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Switch from "@/components/ui/Switch";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import Modal from "@/components/ui/Modal";
 
 type ConfirmTarget = { type: "labour" | "site"; id: string };
 
@@ -23,10 +24,12 @@ export default function DirectoryPage() {
   const [phone, setPhone] = useState("");
   const [dailyRate, setDailyRate] = useState("");
   const [savingLabour, setSavingLabour] = useState(false);
+  const [isAddWorkerOpen, setIsAddWorkerOpen] = useState(false);
 
   const [siteName, setSiteName] = useState("");
   const [clientName, setClientName] = useState("");
   const [savingSite, setSavingSite] = useState(false);
+  const [isAddSiteOpen, setIsAddSiteOpen] = useState(false);
 
   const [editingLabourId, setEditingLabourId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -42,6 +45,7 @@ export default function DirectoryPage() {
   const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [siteDeleteError, setSiteDeleteError] = useState<string | null>(null);
+  const [labourDeleteError, setLabourDeleteError] = useState<string | null>(null);
 
   const handleAddLabour = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +57,7 @@ export default function DirectoryPage() {
       setName("");
       setPhone("");
       setDailyRate("");
+      setIsAddWorkerOpen(false);
     } finally {
       setSavingLabour(false);
     }
@@ -66,6 +71,7 @@ export default function DirectoryPage() {
       await addSite(siteName.trim(), clientName.trim());
       setSiteName("");
       setClientName("");
+      setIsAddSiteOpen(false);
     } finally {
       setSavingSite(false);
     }
@@ -120,6 +126,7 @@ export default function DirectoryPage() {
     try {
       if (confirmTarget.type === "labour") {
         await removeLabour(confirmTarget.id);
+        setLabourDeleteError(null);
       } else {
         await removeSite(confirmTarget.id);
         setSiteDeleteError(null);
@@ -128,6 +135,9 @@ export default function DirectoryPage() {
     } catch (err) {
       if (err instanceof SiteHasRecordsError) {
         setSiteDeleteError(t("siteHasRecordsError"));
+        setConfirmTarget(null);
+      } else if (err instanceof LabourHasRecordsError) {
+        setLabourDeleteError(t("labourHasRecordsError"));
         setConfirmTarget(null);
       } else {
         throw err;
@@ -144,38 +154,21 @@ export default function DirectoryPage() {
       </h1>
 
       <Card>
-        <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">
-          {t("labourWorkers")}
-        </h2>
-        <form
-          onSubmit={handleAddLabour}
-          className="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:items-end"
-        >
-          <Input
-            label={t("workerName")}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-          <Input
-            label={t("phone")}
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-          <Input
-            label={t("rate")}
-            type="number"
-            min={0}
-            value={dailyRate}
-            onChange={(e) => setDailyRate(e.target.value)}
-            required
-          />
-          <Button type="submit" loading={savingLabour}>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+            {t("labourWorkers")}
+          </h2>
+          <Button size="sm" onClick={() => setIsAddWorkerOpen(true)}>
             <Plus className="h-4 w-4" />
             {t("addWorker")}
           </Button>
-        </form>
+        </div>
+
+        {labourDeleteError && (
+          <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-400">
+            {labourDeleteError}
+          </div>
+        )}
 
         <div className="mt-4">
           {labours.length === 0 ? (
@@ -243,7 +236,7 @@ export default function DirectoryPage() {
                         {l.name}
                       </p>
                       <p className="text-xs text-slate-500">
-                        {l.phone || "—"} · ₹{l.dailyRate}/day
+                        {l.phone ? `${l.phone} · ` : ""}₹{l.dailyRate}/day
                       </p>
                     </div>
                     <div className="flex items-center gap-4">
@@ -260,7 +253,10 @@ export default function DirectoryPage() {
                         <Pencil className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => setConfirmTarget({ type: "labour", id: l.id })}
+                        onClick={() => {
+                          setLabourDeleteError(null);
+                          setConfirmTarget({ type: "labour", id: l.id });
+                        }}
                         className="text-slate-400 hover:text-red-600"
                         title={t("delete")}
                       >
@@ -276,29 +272,15 @@ export default function DirectoryPage() {
       </Card>
 
       <Card>
-        <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">
-          {t("constructionSites")}
-        </h2>
-        <form
-          onSubmit={handleAddSite}
-          className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-end"
-        >
-          <Input
-            label={t("siteName")}
-            value={siteName}
-            onChange={(e) => setSiteName(e.target.value)}
-            required
-          />
-          <Input
-            label={t("clientName")}
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-          />
-          <Button type="submit" loading={savingSite}>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+            {t("constructionSites")}
+          </h2>
+          <Button size="sm" onClick={() => setIsAddSiteOpen(true)}>
             <Plus className="h-4 w-4" />
             {t("addSite")}
           </Button>
-        </form>
+        </div>
 
         {siteDeleteError && (
           <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-400">
@@ -407,6 +389,65 @@ export default function DirectoryPage() {
         onConfirm={handleConfirmDelete}
         onCancel={() => setConfirmTarget(null)}
       />
+
+      <Modal
+        open={isAddWorkerOpen}
+        title={t("addWorker")}
+        onClose={() => setIsAddWorkerOpen(false)}
+      >
+        <form onSubmit={handleAddLabour} className="flex flex-col gap-3">
+          <Input
+            label={t("workerName")}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+            required
+          />
+          <Input
+            label={t("phone")}
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+          <Input
+            label={t("rate")}
+            type="number"
+            min={0}
+            value={dailyRate}
+            onChange={(e) => setDailyRate(e.target.value)}
+            required
+          />
+          <Button type="submit" loading={savingLabour} fullWidth>
+            <Plus className="h-4 w-4" />
+            {t("addWorker")}
+          </Button>
+        </form>
+      </Modal>
+
+      <Modal
+        open={isAddSiteOpen}
+        title={t("addSite")}
+        onClose={() => setIsAddSiteOpen(false)}
+      >
+        <form onSubmit={handleAddSite} className="flex flex-col gap-3">
+          <Input
+            label={t("siteName")}
+            value={siteName}
+            onChange={(e) => setSiteName(e.target.value)}
+            autoFocus
+            required
+          />
+          <Input
+            label={t("clientName")}
+            value={clientName}
+            onChange={(e) => setClientName(e.target.value)}
+          />
+          <Button type="submit" loading={savingSite} fullWidth>
+            <Plus className="h-4 w-4" />
+            {t("addSite")}
+          </Button>
+        </form>
+      </Modal>
     </div>
   );
 }

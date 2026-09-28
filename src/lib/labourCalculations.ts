@@ -42,36 +42,32 @@ export const WEEKDAY_KEYS = [
   "saturday",
 ] as const;
 
-export interface ComputedEntry {
-  dailySalary: number;
-  totalCashPaid: number;
-  runningBalance: number;
+export interface WeekTotals {
+  totalSalary: number;
+  totalAdvance: number;
+  /** Lump sum handed to the worker on Saturday for this week. */
+  netPayable: number;
+}
+
+export function computeWeekTotals(
+  logs: { dailySalary: number; extraAdvance: number }[]
+): WeekTotals {
+  const totalSalary = logs.reduce((sum, l) => sum + l.dailySalary, 0);
+  const totalAdvance = logs.reduce((sum, l) => sum + l.extraAdvance, 0);
+  return { totalSalary, totalAdvance, netPayable: totalSalary - totalAdvance };
 }
 
 /**
- * Work Day Rule: today's earned salary first pays down any outstanding
- * advance debt (a negative balance); only the leftover, if any, plus any
- * new advance given today is actually handed to the worker.
- * Non-Work Day Rule: only the advance is paid out, salary earned is 0.
- * negative balance = advance owed by labour; it never exceeds zero, since
- * any salary beyond what's needed to clear the debt is paid out in cash
- * instead of carrying forward as a positive (wage-owed) balance.
+ * The most that can still be advanced today without pushing this week's
+ * Saturday payout below zero. Weeks don't carry a balance to/from each
+ * other, so this only ever looks at salary already earned within the same
+ * week (today included) — not at days later in the week that may never be
+ * worked.
  */
-export function computeEntry(
-  workedToday: boolean,
-  dailyRate: number,
-  extraAdvance: number,
-  previousBalance: number
-): ComputedEntry {
-  const dailySalary = workedToday ? dailyRate : 0;
-  const outstandingDebt = previousBalance < 0 ? -previousBalance : 0;
-  const paidTowardsDebt = Math.min(dailySalary, outstandingDebt);
-  const totalCashPaid = dailySalary - paidTowardsDebt + extraAdvance;
-  const runningBalance = previousBalance + paidTowardsDebt - extraAdvance;
-  return { dailySalary, totalCashPaid, runningBalance };
-}
-
-/** A record has no cash impact and should not be persisted. */
-export function isZeroActivity(workedToday: boolean, extraAdvance: number) {
-  return !workedToday && (!extraAdvance || extraAdvance === 0);
+export function maxAdvanceToday(
+  otherWeekLogs: { dailySalary: number; extraAdvance: number }[],
+  todaysSalary: number
+): number {
+  const { totalSalary, totalAdvance } = computeWeekTotals(otherWeekLogs);
+  return Math.max(0, totalSalary + todaysSalary - totalAdvance);
 }

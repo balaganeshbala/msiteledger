@@ -8,14 +8,12 @@ import type { DailyLabourLog } from "@/types";
 
 /**
  * Read-only, site-scoped view of labour logs (used for a site's totals and
- * activity feed). Entries for non-work days aren't tied to a site, so they
- * never appear here — see useLabourLedger for the worker's global balance
- * and for saving entries.
+ * activity feed) — see useLabourLedger for saving entries.
  *
  * A site's labour cost is always the full earned salary (dailySalary), never
- * totalCashPaid: extraAdvance is a personal loan to the worker, and debt
- * paydown against a prior advance is a worker-ledger concern — neither
- * should shrink or inflate what a site is charged for a day's work.
+ * net of advances: extraAdvance is a personal loan against the worker's
+ * weekly payout, settled on Saturday, and never shrinks or inflates what a
+ * site is charged for a day's work.
  */
 export function useDailyLabourLogs(siteId: string | null) {
   const { user } = useAuth();
