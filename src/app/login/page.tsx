@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Languages } from "lucide-react";
+import { Languages, Moon, Sun } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const { user, loading, loginWithEmail, signupWithEmail, loginWithGoogle } =
     useAuth();
   const { t, language, toggleLanguage } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
   const [mode, setMode] = useState<Mode>("login");
@@ -73,13 +75,27 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-10 dark:bg-slate-950">
-      <button
-        onClick={toggleLanguage}
-        className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-      >
-        <Languages className="h-3.5 w-3.5" />
-        {language === "en" ? "தமிழ்" : "English"}
-      </button>
+      <div className="absolute right-4 top-4 flex items-center gap-2">
+        <button
+          onClick={toggleTheme}
+          className="flex items-center justify-center rounded-full border border-slate-300 bg-white p-1.5 text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+          title="Toggle theme"
+        >
+          {theme === "light" ? (
+            <Moon className="h-3.5 w-3.5" />
+          ) : (
+            <Sun className="h-3.5 w-3.5" />
+          )}
+        </button>
+
+        <button
+          onClick={toggleLanguage}
+          className="flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+        >
+          <Languages className="h-3.5 w-3.5" />
+          {language === "en" ? "தமிழ்" : "English"}
+        </button>
+      </div>
 
       <div className="mb-6 flex flex-col items-center gap-2">
         {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -54,6 +54,8 @@ export interface ClientReceipt {
 
 export type Language = "en" | "ta";
 
+export type Theme = "light" | "dark";
+
 export interface ActivityItem {
   id: string;
   type: "labour" | "expense" | "receipt";

@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Languages, LogOut, User as UserIcon } from "lucide-react";
+import { Languages, LogOut, Moon, Sun, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function Header() {
   const { user, logout } = useAuth();
   const { t, language, toggleLanguage } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -33,6 +35,18 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="flex items-center justify-center rounded-full border border-slate-300 p-1.5 text-slate-700 dark:border-slate-700 dark:text-slate-200"
+            title="Toggle theme"
+          >
+            {theme === "light" ? (
+              <Moon className="h-3.5 w-3.5" />
+            ) : (
+              <Sun className="h-3.5 w-3.5" />
+            )}
+          </button>
+
           <button
             onClick={toggleLanguage}
             className="flex items-center gap-1 rounded-full border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200"
