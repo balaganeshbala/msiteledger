@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Theme } from "@/types";
+import { setUserProperty } from "@/lib/analytics";
 
 const STORAGE_KEY = "msiteledger_theme";
 
@@ -39,6 +40,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setThemeState(initial);
     applyTheme(initial);
   }, []);
+
+  useEffect(() => {
+    setUserProperty("app_theme", theme);
+  }, [theme]);
 
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next);

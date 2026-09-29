@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { trackEvent } from "@/lib/analytics";
 import type { Site } from "@/types";
 
 /** Thrown by removeSite when the site still has expenses, receipts, or labour charges. */
@@ -56,6 +57,7 @@ export function useSites() {
       createdBy: user.uid,
       createdAt: serverTimestamp(),
     });
+    trackEvent("site_created");
   };
 
   const updateSite = async (id: string, patch: Partial<Site>) => {

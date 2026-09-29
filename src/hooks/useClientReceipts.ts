@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { trackEvent } from "@/lib/analytics";
 import type { ClientReceipt } from "@/types";
 
 export function useClientReceipts(siteId: string | null) {
@@ -57,6 +58,7 @@ export function useClientReceipts(siteId: string | null) {
       createdBy: user.uid,
       createdAt: serverTimestamp(),
     });
+    trackEvent("receipt_added");
   };
 
   const updateReceipt = async (

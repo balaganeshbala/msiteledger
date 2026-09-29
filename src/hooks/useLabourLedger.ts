@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { trackEvent } from "@/lib/analytics";
 import type { DailyLabourLog } from "@/types";
 import { getWeekStartDate, maxAdvanceToday } from "@/lib/labourCalculations";
 
@@ -95,15 +96,25 @@ export function useLabourLedger(labourId: string | null) {
         ? doc(db, "dailyLabourLogs", existing.id)
         : doc(db, "dailyLabourLogs", `${labourId}_${date}`);
 
-      await setDoc(ref, {
-        siteId,
-        labourId,
-        date,
-        weekStartDate,
-        dailySalary: dailyRate,
-        extraAdvance,
-        createdBy: user.uid,
-        createdAt: serverTimestamp(),
+      // createdAt is only stamped on a new entry; merge keeps the original
+      // creation time when an existing day is edited.
+      await setDoc(
+        ref,
+        {
+          siteId,
+          labourId,
+          date,
+          weekStartDate,
+          dailySalary: dailyRate,
+          extraAdvance,
+          createdBy: user.uid,
+          ...(existing ? {} : { createdAt: serverTimestamp() }),
+        },
+        { merge: true }
+      );
+      trackEvent("labour_entry_saved", {
+        is_new: !existing,
+        has_advance: extraAdvance > 0,
       });
     },
     [user]
@@ -115,6 +126,7 @@ export function useLabourLedger(labourId: string | null) {
       const existing = logs.find((l) => l.date === date);
       if (!existing) return;
       await deleteDoc(doc(db, "dailyLabourLogs", existing.id));
+      trackEvent("labour_entry_deleted");
     },
     [user, logs]
   );

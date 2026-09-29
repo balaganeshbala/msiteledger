@@ -18,6 +18,7 @@ import {
   type User,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { identifyUser, trackEvent } from "@/lib/analytics";
 
 interface AuthContextValue {
   user: User | null;
@@ -42,12 +43,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
+      identifyUser(u?.uid ?? null);
     });
     return unsubscribe;
   }, []);
 
   const loginWithEmail = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
+    trackEvent("login", { method: "password" });
   };
 
   const signupWithEmail = async (
@@ -61,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password
     );
     await updateProfile(credential.user, { displayName: name });
+    trackEvent("sign_up", { method: "password" });
     setUser(
       Object.assign(
         Object.create(Object.getPrototypeOf(credential.user)),
@@ -70,7 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const loginWithGoogle = async () => {
-    await signInWithPopup(auth, new GoogleAuthProvider());
+    const result = await signInWithPopup(auth, new GoogleAuthProvider());
+    const isNewUser =
+      result.user.metadata.creationTime === result.user.metadata.lastSignInTime;
+    trackEvent(isNewUser ? "sign_up" : "login", { method: "google" });
   };
 
   const logout = async () => {

@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { translations, type TranslationKey } from "@/lib/translations";
+import { setUserProperty } from "@/lib/analytics";
 import type { Language } from "@/types";
 
 const COOKIE_NAME = "msiteledger_lang";
@@ -51,6 +52,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       setLanguageState(stored);
     }
   }, []);
+
+  useEffect(() => {
+    setUserProperty("app_language", language);
+  }, [language]);
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);

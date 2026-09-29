@@ -27,6 +27,8 @@ Full-stack construction site financial management & daily labour salary tracker.
 - `siteExpenses`: { id, siteId, date, title, amount, createdBy }
 - `clientReceipts`: { id, siteId, date, description, amount, createdBy }
 
+Every doc also has `createdAt` (`serverTimestamp()`, set only on create — `saveEntry` uses `merge` so editing a day keeps its original value; entries saved before this fix may carry a later edit time).
+
 All docs are scoped by `createdBy` (the Firebase Auth UID); every hook in `src/hooks/` queries with `where("createdBy", "==", user.uid)`.
 
 ## Core calculation logic (`src/lib/labourCalculations.ts`)
@@ -49,6 +51,7 @@ All docs are scoped by `createdBy` (the Firebase Auth UID); every hook in `src/h
 - Deleting a labour is guarded the same way as deleting a site: `useLabours.removeLabour` throws `LabourHasRecordsError` if the worker has any `dailyLabourLogs`, and the Directory page surfaces that as an error telling the user to deactivate (`isActive` toggle) instead of delete.
 - The app is **online-only**. `src/lib/firebase.ts` enables Firestore's IndexedDB `persistentLocalCache` purely so listeners render instantly from cache on repeat loads — not for offline use. `OfflineOverlay` (mounted in the root layout, driven by `useOnlineStatus`) blocks the whole UI while `navigator.onLine` is false. There's no service worker, so an installed (Chrome "Install app") copy opened offline shows Chrome's own "You're offline" page.
 - New `dailyLabourLogs` docs use the deterministic id `${labourId}_${date}` (see `useLabourLedger.saveEntry`) so concurrent saves from two devices hit one doc instead of duplicating a day. Entries created before this change keep their random ids and are still found by the date query.
+- Analytics: `src/lib/analytics.ts` wraps Firebase Analytics (GA4). It's browser-only, lazy, and a silent no-op when `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` is unset or `isSupported()` fails. `trackEvent` is called after successful writes in the hooks/AuthContext; `identifyUser` runs on auth change; language/theme are user properties. Never put names, phone numbers or amounts in event params.
 - `LanguageContext` persists EN/Tamil choice to a cookie + localStorage; translations live in `src/lib/translations.ts` as a flat key → {en, ta} dictionary, typed via `TranslationKey`.
 - A few `useEffect` calls have `// eslint-disable-next-line react-hooks/set-state-in-effect` comments — these are intentional (hydrating from localStorage/cookie on mount, or resetting cached Firestore data when the auth/site scope changes), not oversights.
 

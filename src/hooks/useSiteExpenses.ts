@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { trackEvent } from "@/lib/analytics";
 import type { SiteExpense } from "@/types";
 
 export function useSiteExpenses(siteId: string | null) {
@@ -57,6 +58,7 @@ export function useSiteExpenses(siteId: string | null) {
       createdBy: user.uid,
       createdAt: serverTimestamp(),
     });
+    trackEvent("expense_added");
   };
 
   const updateExpense = async (

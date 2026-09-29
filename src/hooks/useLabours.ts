@@ -16,6 +16,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
+import { trackEvent } from "@/lib/analytics";
 import type { Labour } from "@/types";
 
 /** Thrown by removeLabour when the worker still has daily labour logs. */
@@ -63,6 +64,7 @@ export function useLabours() {
       createdBy: user.uid,
       createdAt: serverTimestamp(),
     });
+    trackEvent("labour_created");
   };
 
   const updateLabour = async (id: string, patch: Partial<Labour>) => {
