@@ -349,12 +349,12 @@ export default function LabourPage() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] text-sm">
+            <table className="w-full min-w-[1080px] text-sm">
               <thead>
                 <tr className="border-b border-slate-200 text-left text-xs text-slate-500 dark:border-slate-800">
                   <th className="py-2 pr-3">{t("workerName")}</th>
                   {tableWeekDates.map((date, i) => (
-                    <th key={date} className="py-2 pr-3">
+                    <th key={date} className="min-w-[90px] py-2 pr-3">
                       <div>{t(WEEKDAY_KEYS[i] as TranslationKey)}</div>
                       <div className="font-normal text-slate-400">{date}</div>
                     </th>
@@ -376,7 +376,7 @@ export default function LabourPage() {
                     {tableWeekDates.map((date) => {
                       const log = logs.find((l) => l.date === date);
                       return (
-                        <td key={date} className="py-2 pr-3">
+                        <td key={date} className="min-w-[90px] py-2 pr-3">
                           <button
                             type="button"
                             onClick={() => openEditEntry(labourId, date)}
