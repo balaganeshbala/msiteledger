@@ -88,9 +88,12 @@ export function useLabourLedger(labourId: string | null) {
         );
       }
 
+      // New entries get a deterministic `${labourId}_${date}` id so two devices
+      // saving the same worker's same day write to one doc instead of creating
+      // duplicates. Older entries keep their original random id.
       const ref = existing
         ? doc(db, "dailyLabourLogs", existing.id)
-        : doc(collection(db, "dailyLabourLogs"));
+        : doc(db, "dailyLabourLogs", `${labourId}_${date}`);
 
       await setDoc(ref, {
         siteId,

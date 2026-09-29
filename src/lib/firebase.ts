@@ -1,6 +1,12 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  type Firestore,
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,6 +19,26 @@ const firebaseConfig = {
 
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth: Auth = getAuth(app);
-const db: Firestore = getFirestore(app);
+
+// IndexedDB-backed cache so listeners render instantly from the last session's
+// data on repeat loads, then sync from the server. This is a read-speed cache,
+// not offline support — OfflineOverlay blocks the app whenever it's offline.
+// Browser-only: the static export prerenders this module in Node, which has no
+// IndexedDB. initializeFirestore throws if called twice (dev HMR re-evaluates
+// this module), so fall back to the already-initialized instance.
+function createDb(): Firestore {
+  if (typeof window === "undefined") return getFirestore(app);
+  try {
+    return initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } catch {
+    return getFirestore(app);
+  }
+}
+
+const db: Firestore = createDb();
 
 export { app, auth, db };
