@@ -1,17 +1,13 @@
-"use client";
-
-import { Suspense } from "react";
-import Link from "next/link";
-import { useSearchParams, usePathname } from "next/navigation";
+import { Link, Outlet, useLocation, useSearchParams } from "react-router";
 import { ArrowLeft, LayoutDashboard, Receipt, Wallet, HardHat } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSiteContext } from "@/contexts/SiteContext";
 import NetCashBadge from "@/components/NetCashBadge";
 
-function SiteDetailLayoutContent({ children }: { children: React.ReactNode }) {
+export default function SiteLayout() {
   const { t } = useLanguage();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
+  const [searchParams] = useSearchParams();
+  const { pathname } = useLocation();
   const { sites, loading } = useSiteContext();
 
   const siteId = searchParams.get("id") ?? "";
@@ -34,7 +30,7 @@ function SiteDetailLayoutContent({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col items-center gap-3 py-16 text-center">
         <p className="text-sm text-slate-500">{t("noData")}</p>
         <Link
-          href="/sites"
+          to="/sites"
           className="flex items-center gap-1.5 text-sm font-medium text-orange-600"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -48,7 +44,7 @@ function SiteDetailLayoutContent({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3">
         <Link
-          href="/sites"
+          to="/sites"
           className="flex w-fit items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-orange-600"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -79,7 +75,7 @@ function SiteDetailLayoutContent({ children }: { children: React.ReactNode }) {
             return (
               <Link
                 key={tab.href}
-                href={tab.href}
+                to={tab.href}
                 className={`flex flex-shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
                   active
                     ? "border-orange-600 text-orange-600"
@@ -94,19 +90,7 @@ function SiteDetailLayoutContent({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
 
-      {children}
+      <Outlet />
     </div>
-  );
-}
-
-export default function SiteDetailLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <Suspense fallback={<p className="text-sm text-slate-500">Loading...</p>}>
-      <SiteDetailLayoutContent>{children}</SiteDetailLayoutContent>
-    </Suspense>
   );
 }

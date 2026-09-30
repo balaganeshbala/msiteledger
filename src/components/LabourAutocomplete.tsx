@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Search, User } from "lucide-react";

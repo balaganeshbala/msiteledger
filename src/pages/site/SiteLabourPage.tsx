@@ -1,8 +1,5 @@
-"use client";
-
-import { Suspense, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import { Info } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDailyLabourLogs } from "@/hooks/useDailyLabourLogs";
@@ -20,9 +17,9 @@ function formatCurrency(n: number) {
   return `₹${n.toLocaleString("en-IN")}`;
 }
 
-function SiteLabourContent() {
+export default function SiteLabourPage() {
   const { t } = useLanguage();
-  const searchParams = useSearchParams();
+  const [searchParams] = useSearchParams();
   const siteId = searchParams.get("id");
   const { logs, totalLabourOutflow } = useDailyLabourLogs(siteId);
   const { labours } = useLabours();
@@ -87,7 +84,7 @@ function SiteLabourContent() {
         <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
         <span>
           {t("viewOnlyLabourNote")}{" "}
-          <Link href="/labour" className="font-medium text-orange-600 underline">
+          <Link to="/labour" className="font-medium text-orange-600 underline">
             {t("dailyLabour")}
           </Link>
         </span>
@@ -237,13 +234,5 @@ function SiteLabourContent() {
         )}
       </Card>
     </div>
-  );
-}
-
-export default function SiteLabourPage() {
-  return (
-    <Suspense fallback={<p className="text-sm text-slate-500">Loading...</p>}>
-      <SiteLabourContent />
-    </Suspense>
   );
 }

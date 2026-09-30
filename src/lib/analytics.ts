@@ -8,10 +8,9 @@ import {
 } from "firebase/analytics";
 import { app } from "@/lib/firebase";
 
-// Google Analytics (via Firebase) is browser-only: the static export
-// prerenders modules in Node, and some browsers (or blockers) make it
-// unavailable. Every helper here is fire-and-forget and silently no-ops in
-// those cases, so analytics can never break or slow down a real action.
+// Google Analytics (via Firebase) can be unavailable in some browsers (or
+// behind blockers). Every helper here is fire-and-forget and silently no-ops
+// in those cases, so analytics can never break or slow down a real action.
 //
 // Never pass site/client/worker names, phone numbers or amounts as params —
 // only counts, flags and the pseudonymous Firebase UID.
@@ -19,10 +18,7 @@ import { app } from "@/lib/firebase";
 let analyticsPromise: Promise<Analytics | null> | null = null;
 
 function getAnalyticsInstance(): Promise<Analytics | null> {
-  if (
-    typeof window === "undefined" ||
-    !process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-  ) {
+  if (!import.meta.env.VITE_FIREBASE_MEASUREMENT_ID) {
     return Promise.resolve(null);
   }
   analyticsPromise ??= isSupported()

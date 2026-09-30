@@ -1,5 +1,3 @@
-"use client";
-
 import { WifiOff } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";

@@ -3,8 +3,8 @@
 /* dark: utilities activate under a .dark ancestor, toggled on <html> by ThemeContext. */
 @custom-variant dark (&:is(.dark *));
 
-@theme inline {
-  --font-sans: var(--font-jakarta-sans);
+@theme {
+  --font-sans: "Plus Jakarta Sans Variable", Arial, Helvetica, sans-serif;
 }
 
 :root {
@@ -16,5 +16,5 @@
 }
 
 body {
-  font-family: var(--font-jakarta-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }

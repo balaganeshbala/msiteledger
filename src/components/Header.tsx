@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState } from "react";
 import { Languages, LogOut, Moon, Sun, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,7 +25,6 @@ export default function Header() {
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <div className="flex items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/app-icon.png" alt="" className="h-9 w-9 rounded-xl" />
           <span className="text-lg font-bold text-slate-900 sm:inline dark:text-white">
             {t("appName")}
@@ -65,7 +62,6 @@ export default function Header() {
               title={user?.displayName ?? user?.email ?? t("logout")}
             >
               {user?.photoURL ? (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={user.photoURL}
                   alt=""

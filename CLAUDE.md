@@ -1,20 +1,19 @@
-@AGENTS.md
-
 # MSiteLedger
 
 Full-stack construction site financial management & daily labour salary tracker. Bilingual (English / Tamil).
 
 ## Tech stack
 
-- Next.js 16 (App Router, TypeScript, Turbopack) — see `AGENTS.md` note: this repo's Next.js version has breaking changes vs. training data; read `node_modules/next/dist/docs/` before assuming Next 14 conventions (e.g. `params` is a Promise, `LayoutProps`/`PageProps` are generated global helper types).
-- Tailwind CSS v4, Lucide React icons
+- Vite 8 + React 19 (TypeScript), a pure client-side SPA — no SSR, no server code
+- React Router v8 (declarative `<BrowserRouter>` + `<Routes>`, imported from `react-router`)
+- Tailwind CSS v4 (via `@tailwindcss/vite`), Lucide React icons, Plus Jakarta Sans via `@fontsource-variable`
 - Firebase Auth (Email/Password + Phone OTP) + Cloud Firestore
-- Deploy target: Firebase Hosting via the Next.js web frameworks integration (`firebase.json` already configured)
+- Deploy target: Firebase Hosting serving the static `dist/` build, with a `** → /index.html` SPA rewrite (`firebase.json`)
 
 ## Firebase project
 
 - Project ID: `msiteledger` (real project, not a placeholder)
-- Real config lives in `.env.local` (gitignored — never commit it). `.env.local.example` has the empty template.
+- Real config lives in `.env.local` (gitignored — never commit it) as `VITE_FIREBASE_*` vars, read via `import.meta.env`. `.env.local.example` has the empty template.
 - Email/Password auth provider is enabled. Phone OTP auth code exists (`sendPhoneOtp` in `AuthContext`) but has not been tested against a real phone number/reCAPTCHA yet.
 - `firestore.rules` (enforcing per-user isolation, `createdBy == request.auth.uid`) is deployed and active — Firestore is no longer in open test mode.
 - To run locally: `npm run dev`, then sign up with any email/password at `/login` — it creates a real (free-tier) Firebase Auth user.
@@ -42,18 +41,20 @@ All docs are scoped by `createdBy` (the Firebase Auth UID); every hook in `src/h
 
 ## Structure notes
 
-- `src/app/(app)/` is a route group — layout.tsx there gates on auth (`useAuth`) and wraps children in `SiteProvider`, `Header`, `TabNav`. Top-level tabs: `sites`, `labour`, `directory` (no global "active site" selector — the Labour tab picks a site per entry, and site financials live under `/site`).
-- `src/app/(app)/sites/page.tsx` is a **browse-only** list of sites — there's no "Add Site" here; it links to Master Directory when empty. `src/app/(app)/site/layout.tsx` resolves the site from a `?id=` search param (`useSearchParams`, not a dynamic route segment — despite the folder being named `site`, singular) and renders its own sub-nav (Overview, Site Expenses, Client Receipts, Labour) plus a per-site `NetCashBadge`. `site/labour/page.tsx` is a **read-only** view of labour costs incurred at that site — editing/adding/deleting entries always happens on the global Labour tab.
-- `src/app/login/` and `src/app/page.tsx` are outside the `(app)` group (unauthenticated / redirect-only).
+- Entry: `index.html` → `src/main.tsx` (`BrowserRouter`) → `src/App.tsx`, which holds the providers (Theme, Language, Auth), `OfflineOverlay`, and the whole route table. Pages live in `src/pages/`, layout routes (rendering `<Outlet />`) in `src/layouts/`. Unknown paths redirect to `/`.
+- `layouts/AppLayout.tsx` is a pathless layout route that gates on auth (`useAuth`, redirects to `/login`) and wraps its routes in `SiteProvider`, `Header`, `TabNav`. Top-level tabs: `sites`, `labour`, `directory` (no global "active site" selector — the Labour tab picks a site per entry, and site financials live under `/site`).
+- `pages/SitesPage.tsx` is a **browse-only** list of sites — there's no "Add Site" here; it links to Master Directory when empty. `layouts/SiteLayout.tsx` (the `/site` route) resolves the site from a `?id=` search param (`useSearchParams`, not a `:id` path segment — kept so existing URLs still work) and renders its own sub-nav (Overview, Site Expenses, Client Receipts, Labour) plus a per-site `NetCashBadge`. `pages/site/SiteLabourPage.tsx` is a **read-only** view of labour costs incurred at that site — editing/adding/deleting entries always happens on the global Labour tab.
+- `/login` (`pages/LoginPage.tsx`) and `/` (`pages/HomePage.tsx`, redirect-only) sit outside `AppLayout`.
+- Static assets (icons, `manifest.webmanifest`) live in `public/`; page `<title>`/meta/theme-color tags are static in `index.html`.
 - `SiteContext` just exposes the live `sites` list and CRUD (`addSite`/`updateSite`/`removeSite`) — there's no persisted "active site" anymore. Site-scoped data hooks (`useDailyLabourLogs`, `useSiteExpenses`, `useClientReceipts`) take a `siteId` explicitly (from the route param, or from local form state on the Labour tab). `addSite` is only invoked from the Master Directory's "Add Site" popup.
 - Adding things is popup-driven, not inline: the Labour tab's entry form, and the Directory's "Add Worker"/"Add Site" forms, all live in `src/components/ui/Modal.tsx` popups triggered by an explicit button, rather than being permanently visible on the page. Editing an existing labour entry is done by clicking its cell in the Labour tab's weekly matrix (all workers × Sun–Sat, with Total Salary/Total Advance/Net Payable columns), which reopens the same popup pre-filled; a trash icon inside that popup deletes the day's entry (`useLabourLedger.deleteEntry`), guarded by a confirm dialog.
 - `LabourAutocomplete` renders its suggestion dropdown through a React portal to `document.body`, positioned `fixed` from the input's live bounding rect — needed because it's used inside `Modal`, whose `overflow-y-auto` panel would otherwise clip/scroll an `absolute`-positioned dropdown.
 - Deleting a labour is guarded the same way as deleting a site: `useLabours.removeLabour` throws `LabourHasRecordsError` if the worker has any `dailyLabourLogs`, and the Directory page surfaces that as an error telling the user to deactivate (`isActive` toggle) instead of delete.
-- The app is **online-only**. `src/lib/firebase.ts` enables Firestore's IndexedDB `persistentLocalCache` purely so listeners render instantly from cache on repeat loads — not for offline use. `OfflineOverlay` (mounted in the root layout, driven by `useOnlineStatus`) blocks the whole UI while `navigator.onLine` is false. There's no service worker, so an installed (Chrome "Install app") copy opened offline shows Chrome's own "You're offline" page.
+- The app is **online-only**. `src/lib/firebase.ts` enables Firestore's IndexedDB `persistentLocalCache` purely so listeners render instantly from cache on repeat loads — not for offline use. `OfflineOverlay` (mounted in `App.tsx`, driven by `useOnlineStatus`) blocks the whole UI while `navigator.onLine` is false. There's no service worker, so an installed (Chrome "Install app") copy opened offline shows Chrome's own "You're offline" page.
 - New `dailyLabourLogs` docs use the deterministic id `${labourId}_${date}` (see `useLabourLedger.saveEntry`) so concurrent saves from two devices hit one doc instead of duplicating a day. Entries created before this change keep their random ids and are still found by the date query.
-- Analytics: `src/lib/analytics.ts` wraps Firebase Analytics (GA4). It's browser-only, lazy, and a silent no-op when `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` is unset or `isSupported()` fails. `trackEvent` is called after successful writes in the hooks/AuthContext; `identifyUser` runs on auth change; language/theme are user properties. Never put names, phone numbers or amounts in event params.
+- Analytics: `src/lib/analytics.ts` wraps Firebase Analytics (GA4). It's browser-only, lazy, and a silent no-op when `VITE_FIREBASE_MEASUREMENT_ID` is unset or `isSupported()` fails. `trackEvent` is called after successful writes in the hooks/AuthContext; `identifyUser` runs on auth change; language/theme are user properties. Never put names, phone numbers or amounts in event params.
 - `LanguageContext` persists EN/Tamil choice to a cookie + localStorage; translations live in `src/lib/translations.ts` as a flat key → {en, ta} dictionary, typed via `TranslationKey`.
-- A few `useEffect` calls have `// eslint-disable-next-line react-hooks/set-state-in-effect` comments — these are intentional (hydrating from localStorage/cookie on mount, or resetting cached Firestore data when the auth/site scope changes), not oversights.
+- `LanguageContext`/`ThemeContext` read their stored value in the `useState` initializer (safe since there's no SSR). A few hooks have `// eslint-disable-next-line react-hooks/set-state-in-effect` comments — these are intentional (resetting cached Firestore data when the auth/site scope changes), not oversights.
 
 ## Known gaps / not yet done
 

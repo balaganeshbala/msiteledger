@@ -1,12 +1,9 @@
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useLocation } from "react-router";
 import { Building2, HardHat, BookUser } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function TabNav() {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const { t } = useLanguage();
 
   const tabs = [
@@ -27,7 +24,7 @@ export default function TabNav() {
           return (
             <Link
               key={tab.href}
-              href={tab.href}
+              to={tab.href}
               className={`flex flex-shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
                 active
                   ? "border-orange-600 text-orange-600"

@@ -1,10 +1,8 @@
-"use client";
-
-import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useSearchParams } from "react-router";
 import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useSiteExpenses } from "@/hooks/useSiteExpenses";
+import { useClientReceipts } from "@/hooks/useClientReceipts";
 import { todayDateString } from "@/lib/labourCalculations";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -14,51 +12,55 @@ function formatCurrency(n: number) {
   return `₹${n.toLocaleString("en-IN")}`;
 }
 
-function SiteExpensesContent() {
+export default function SiteReceiptsPage() {
   const { t } = useLanguage();
-  const searchParams = useSearchParams();
+  const [searchParams] = useSearchParams();
   const siteId = searchParams.get("id");
-  const { expenses, addExpense, updateExpense, removeExpense, total } =
-    useSiteExpenses(siteId);
+  const { receipts, addReceipt, updateReceipt, removeReceipt, total } =
+    useClientReceipts(siteId);
 
   const [date, setDate] = useState(todayDateString());
-  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [saving, setSaving] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDate, setEditDate] = useState("");
-  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [editAmount, setEditAmount] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const amt = Number(amount);
-    if (!title.trim() || !amt || amt <= 0) return;
+    if (!description.trim() || !amt || amt <= 0) return;
     setSaving(true);
     try {
-      await addExpense({ date, title: title.trim(), amount: amt });
-      setTitle("");
+      await addReceipt({ date, description: description.trim(), amount: amt });
+      setDescription("");
       setAmount("");
     } finally {
       setSaving(false);
     }
   };
 
-  const startEdit = (exp: { id: string; date: string; title: string; amount: number }) => {
-    setEditingId(exp.id);
-    setEditDate(exp.date);
-    setEditTitle(exp.title);
-    setEditAmount(String(exp.amount));
+  const startEdit = (r: { id: string; date: string; description: string; amount: number }) => {
+    setEditingId(r.id);
+    setEditDate(r.date);
+    setEditDescription(r.description);
+    setEditAmount(String(r.amount));
   };
 
   const handleSaveEdit = async (id: string) => {
     const amt = Number(editAmount);
-    if (!editTitle.trim() || !amt || amt <= 0) return;
+    if (!editDescription.trim() || !amt || amt <= 0) return;
     setSavingEdit(true);
     try {
-      await updateExpense(id, { date: editDate, title: editTitle.trim(), amount: amt });
+      await updateReceipt(id, {
+        date: editDate,
+        description: editDescription.trim(),
+        amount: amt,
+      });
       setEditingId(null);
     } finally {
       setSavingEdit(false);
@@ -81,15 +83,15 @@ function SiteExpensesContent() {
           />
           <div className="sm:col-span-2">
             <Input
-              label={t("expenseTitle")}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t("expenseHint")}
+              label={t("receiptDescription")}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t("receiptHint")}
               required
             />
           </div>
           <Input
-            label={t("expenseAmount")}
+            label={t("receiptAmount")}
             type="number"
             min={0}
             value={amount}
@@ -99,7 +101,7 @@ function SiteExpensesContent() {
           <div className="sm:col-span-4">
             <Button type="submit" loading={saving} fullWidth>
               <Plus className="h-4 w-4" />
-              {t("addExpense")}
+              {t("addReceipt")}
             </Button>
           </div>
         </form>
@@ -108,22 +110,22 @@ function SiteExpensesContent() {
       <Card>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-            {t("expenseList")}
+            {t("receiptList")}
           </h2>
-          <span className="text-sm font-bold text-red-600">
+          <span className="text-sm font-bold text-emerald-600">
             {formatCurrency(total)}
           </span>
         </div>
 
-        {expenses.length === 0 ? (
+        {receipts.length === 0 ? (
           <p className="py-6 text-center text-sm text-slate-500">
-            {t("noExpenses")}
+            {t("noReceipts")}
           </p>
         ) : (
           <ul className="flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
-            {expenses.map((exp) =>
-              editingId === exp.id ? (
-                <li key={exp.id} className="py-3">
+            {receipts.map((r) =>
+              editingId === r.id ? (
+                <li key={r.id} className="py-3">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:items-end">
                     <Input
                       label={t("date")}
@@ -134,15 +136,15 @@ function SiteExpensesContent() {
                     />
                     <div className="sm:col-span-2">
                       <Input
-                        label={t("expenseTitle")}
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
+                        label={t("receiptDescription")}
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
                         autoFocus
                         required
                       />
                     </div>
                     <Input
-                      label={t("expenseAmount")}
+                      label={t("receiptAmount")}
                       type="number"
                       min={0}
                       value={editAmount}
@@ -154,7 +156,7 @@ function SiteExpensesContent() {
                         type="button"
                         size="sm"
                         loading={savingEdit}
-                        onClick={() => handleSaveEdit(exp.id)}
+                        onClick={() => handleSaveEdit(r.id)}
                         fullWidth
                       >
                         <Check className="h-4 w-4" />
@@ -175,28 +177,28 @@ function SiteExpensesContent() {
                 </li>
               ) : (
                 <li
-                  key={exp.id}
+                  key={r.id}
                   className="flex items-center justify-between gap-3 py-2.5"
                 >
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
-                      {exp.title}
+                      {r.description}
                     </span>
-                    <span className="text-xs text-slate-500">{exp.date}</span>
+                    <span className="text-xs text-slate-500">{r.date}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-red-600">
-                      {formatCurrency(exp.amount)}
+                    <span className="text-sm font-semibold text-emerald-600">
+                      {formatCurrency(r.amount)}
                     </span>
                     <button
-                      onClick={() => startEdit(exp)}
+                      onClick={() => startEdit(r)}
                       className="text-slate-400 hover:text-orange-600"
                       title={t("edit")}
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => removeExpense(exp.id)}
+                      onClick={() => removeReceipt(r.id)}
                       className="text-slate-400 hover:text-red-600"
                       title={t("delete")}
                     >
@@ -210,13 +212,5 @@ function SiteExpensesContent() {
         )}
       </Card>
     </div>
-  );
-}
-
-export default function SiteExpensesPage() {
-  return (
-    <Suspense fallback={<p className="text-sm text-slate-500">Loading...</p>}>
-      <SiteExpensesContent />
-    </Suspense>
   );
 }

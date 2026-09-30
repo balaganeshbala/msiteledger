@@ -1,5 +1,3 @@
-"use client";
-
 import {
   createContext,
   useContext,
@@ -26,7 +24,6 @@ const LanguageContext = createContext<LanguageContextValue | undefined>(
 );
 
 function readCookie(name: string): string | null {
-  if (typeof document === "undefined") return null;
   const match = document.cookie.match(
     new RegExp("(^| )" + name + "=([^;]+)")
   );
@@ -34,24 +31,17 @@ function readCookie(name: string): string | null {
 }
 
 function writeCookie(name: string, value: string) {
-  if (typeof document === "undefined") return;
   document.cookie = `${name}=${encodeURIComponent(
     value
   )}; path=/; max-age=31536000; SameSite=Lax`;
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("en");
-
-  useEffect(() => {
+  const [language, setLanguageState] = useState<Language>(() => {
     const stored =
-      (readCookie(COOKIE_NAME) as Language | null) ??
-      (localStorage.getItem(COOKIE_NAME) as Language | null);
-    if (stored === "en" || stored === "ta") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration from cookie/localStorage after mount
-      setLanguageState(stored);
-    }
-  }, []);
+      readCookie(COOKIE_NAME) ?? localStorage.getItem(COOKIE_NAME);
+    return stored === "ta" ? "ta" : "en";
+  });
 
   useEffect(() => {
     setUserProperty("app_language", language);

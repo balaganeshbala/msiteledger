@@ -6,10 +6,10 @@ Track, per construction site: client receipts, site expenses, and daily labour w
 
 ## Tech stack
 
-- **Next.js 16** (App Router, TypeScript, Turbopack) — deployed as a fully static export (`output: "export"`); every page is client-rendered, there's no Node.js server or Cloud Function involved.
+- **Vite + React 19** (TypeScript) with **React Router** — a client-side single-page app; there's no Node.js server or Cloud Function involved.
 - **Tailwind CSS v4**, Lucide React icons
 - **Firebase Auth** (Email/Password + Phone OTP) + **Cloud Firestore**
-- **Deploy target**: Firebase Hosting, as static files (no Cloud Functions, no Blaze plan required)
+- **Deploy target**: Firebase Hosting, as static files with an SPA rewrite to `index.html` (no Cloud Functions, no Blaze plan required)
 
 ## Getting started
 
@@ -26,12 +26,13 @@ Open [http://localhost:3000](http://localhost:3000), then sign up with any email
 `.env.local` (gitignored — never commit your real values) needs the Firebase web app config:
 
 ```
-NEXT_PUBLIC_FIREBASE_API_KEY=
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-NEXT_PUBLIC_FIREBASE_APP_ID=
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=   # optional — enables Google Analytics
 ```
 
 These are public web config values (safe to ship in a client bundle by design), not secrets — but `.env.local` is still kept out of git so each environment can point at its own Firebase project.
@@ -40,9 +41,9 @@ These are public web config values (safe to ship in a client bundle by design), 
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Start the dev server (Turbopack) |
-| `npm run build` | Production build — outputs a static site to `out/` |
-| `npm run start` | Serve the last `npm run build` output locally |
+| `npm run dev` | Start the Vite dev server on port 3000 |
+| `npm run build` | Type-check, then build the static site to `dist/` |
+| `npm run preview` | Serve the last `npm run build` output locally |
 | `npm run lint` | ESLint |
 
 ## Deploying

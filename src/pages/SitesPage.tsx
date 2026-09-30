@@ -1,6 +1,4 @@
-"use client";
-
-import Link from "next/link";
+import { Link } from "react-router";
 import { Building2, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSiteContext } from "@/contexts/SiteContext";
@@ -26,7 +24,7 @@ export default function SitesPage() {
             {t("selectSitePrompt")}
           </p>
           <Link
-            href="/directory"
+            to="/directory"
             className="text-sm font-medium text-orange-600 underline"
           >
             {t("createFirstSite")}
@@ -37,7 +35,7 @@ export default function SitesPage() {
           {sites.map((site) => (
             <li key={site.id}>
               <Link
-                href={`/site?id=${site.id}`}
+                to={`/site?id=${site.id}`}
                 className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-orange-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-orange-800"
               >
                 <div className="flex items-center gap-3">

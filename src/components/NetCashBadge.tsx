@@ -1,5 +1,3 @@
-"use client";
-
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { useDailyLabourLogs } from "@/hooks/useDailyLabourLogs";
 import { useSiteExpenses } from "@/hooks/useSiteExpenses";

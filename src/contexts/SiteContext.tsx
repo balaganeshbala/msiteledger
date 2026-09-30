@@ -1,5 +1,3 @@
-"use client";
-
 import { createContext, useContext, type ReactNode } from "react";
 import { useSites } from "@/hooks/useSites";
 import type { Site } from "@/types";

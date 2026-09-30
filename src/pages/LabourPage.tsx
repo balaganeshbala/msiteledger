@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Save, Check, Trash2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";

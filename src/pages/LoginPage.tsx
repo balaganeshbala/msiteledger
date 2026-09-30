@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router";
 import { Languages, Moon, Sun } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -17,7 +15,7 @@ export default function LoginPage() {
     useAuth();
   const { t, language, toggleLanguage } = useLanguage();
   const { theme, toggleTheme } = useTheme();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const [mode, setMode] = useState<Mode>("login");
 
@@ -30,9 +28,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace("/sites");
+      navigate("/sites", { replace: true });
     }
-  }, [user, loading, router]);
+  }, [user, loading, navigate]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +42,7 @@ export default function LoginPage() {
       } else {
         await signupWithEmail(email, password, name.trim());
       }
-      router.replace("/sites");
+      navigate("/sites", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -57,7 +55,7 @@ export default function LoginPage() {
     setBusy(true);
     try {
       await loginWithGoogle();
-      router.replace("/sites");
+      navigate("/sites", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sign in with Google");
     } finally {
@@ -98,7 +96,6 @@ export default function LoginPage() {
       </div>
 
       <div className="mb-6 flex flex-col items-center gap-2">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/app-icon.png"
           alt=""

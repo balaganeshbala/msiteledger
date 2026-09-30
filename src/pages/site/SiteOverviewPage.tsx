@@ -1,7 +1,5 @@
-"use client";
-
-import { Suspense, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useMemo } from "react";
+import { useSearchParams } from "react-router";
 import {
   Wallet,
   HardHat,
@@ -22,9 +20,9 @@ function formatCurrency(n: number) {
   return `₹${n.toLocaleString("en-IN")}`;
 }
 
-function SiteOverviewContent() {
+export default function SiteOverviewPage() {
   const { t } = useLanguage();
-  const searchParams = useSearchParams();
+  const [searchParams] = useSearchParams();
   const siteId = searchParams.get("id");
   const { logs, totalLabourOutflow } = useDailyLabourLogs(siteId);
   const { expenses, total: totalExpenses } = useSiteExpenses(siteId);
@@ -166,13 +164,5 @@ function SiteOverviewContent() {
         )}
       </Card>
     </div>
-  );
-}
-
-export default function SiteOverviewPage() {
-  return (
-    <Suspense fallback={<p className="text-sm text-slate-500">Loading...</p>}>
-      <SiteOverviewContent />
-    </Suspense>
   );
 }

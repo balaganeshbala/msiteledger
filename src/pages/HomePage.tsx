@@ -1,17 +1,15 @@
-"use client";
-
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Home() {
   const { user, loading } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (loading) return;
-    router.replace(user ? "/sites" : "/login");
-  }, [user, loading, router]);
+    navigate(user ? "/sites" : "/login", { replace: true });
+  }, [user, loading, navigate]);
 
   return (
     <div className="flex flex-1 items-center justify-center">
