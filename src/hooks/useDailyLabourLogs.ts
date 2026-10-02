@@ -3,6 +3,7 @@ import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { DailyLabourLog } from "@/types";
+import { isWorkedDay } from "@/lib/labourCalculations";
 
 /**
  * Read-only, site-scoped view of labour logs (used for a site's totals and
@@ -11,7 +12,8 @@ import type { DailyLabourLog } from "@/types";
  * A site's labour cost is always the full earned salary (dailySalary), never
  * net of advances: extraAdvance is a personal loan against the worker's
  * weekly payout, settled on Saturday, and never shrinks or inflates what a
- * site is charged for a day's work.
+ * site is charged for a day's work. For the same reason, advance-only days
+ * (worked === false) are left out entirely — no work was done at the site.
  */
 export function useDailyLabourLogs(siteId: string | null) {
   const { user } = useAuth();
@@ -32,9 +34,9 @@ export function useDailyLabourLogs(siteId: string | null) {
       where("siteId", "==", siteId)
     );
     const unsub = onSnapshot(q, (snap) => {
-      const rows = snap.docs.map(
-        (d) => ({ id: d.id, ...d.data() } as DailyLabourLog)
-      );
+      const rows = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() } as DailyLabourLog))
+        .filter(isWorkedDay);
       rows.sort((a, b) => a.date.localeCompare(b.date));
       setLogs(rows);
       setLoading(false);

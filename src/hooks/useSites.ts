@@ -52,6 +52,7 @@ export function useSites() {
     await addDoc(collection(db, "sites"), {
       siteName,
       clientName,
+      isCompleted: false,
       createdBy: user.uid,
       createdAt: serverTimestamp(),
     });

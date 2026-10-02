@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router";
-import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X, Wallet } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useClientReceipts } from "@/hooks/useClientReceipts";
 import { todayDateString } from "@/lib/labourCalculations";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import Modal from "@/components/ui/Modal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 function formatCurrency(n: number) {
   return `₹${n.toLocaleString("en-IN")}`;
@@ -23,12 +25,16 @@ export default function SiteReceiptsPage() {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDate, setEditDate] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editAmount, setEditAmount] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,9 +45,17 @@ export default function SiteReceiptsPage() {
       await addReceipt({ date, description: description.trim(), amount: amt });
       setDescription("");
       setAmount("");
+      setIsAddOpen(false);
     } finally {
       setSaving(false);
     }
+  };
+
+  const openAdd = () => {
+    setDate(todayDateString());
+    setDescription("");
+    setAmount("");
+    setIsAddOpen(true);
   };
 
   const startEdit = (r: { id: string; date: string; description: string; amount: number }) => {
@@ -67,54 +81,42 @@ export default function SiteReceiptsPage() {
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setDeleting(true);
+    try {
+      await removeReceipt(deleteTargetId);
+      setDeleteTargetId(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <Card>
-        <form
-          onSubmit={handleSubmit}
-          className="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:items-end"
-        >
-          <Input
-            label={t("date")}
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            required
-          />
-          <div className="sm:col-span-2">
-            <Input
-              label={t("receiptDescription")}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t("receiptHint")}
-              required
-            />
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-slate-500">
+            {t("totalReceipts")}
+          </span>
+          <div className="rounded-lg p-1.5 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40">
+            <Wallet className="h-4 w-4" />
           </div>
-          <Input
-            label={t("receiptAmount")}
-            type="number"
-            min={0}
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            required
-          />
-          <div className="sm:col-span-4">
-            <Button type="submit" loading={saving} fullWidth>
-              <Plus className="h-4 w-4" />
-              {t("addReceipt")}
-            </Button>
-          </div>
-        </form>
+        </div>
+        <p className="mt-2 text-2xl font-bold text-emerald-600">
+          {formatCurrency(total)}
+        </p>
       </Card>
 
       <Card>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
             {t("receiptList")}
           </h2>
-          <span className="text-sm font-bold text-emerald-600">
-            {formatCurrency(total)}
-          </span>
+          <Button size="sm" onClick={openAdd}>
+            <Plus className="h-4 w-4" />
+            {t("addReceipt")}
+          </Button>
         </div>
 
         {receipts.length === 0 ? (
@@ -198,7 +200,7 @@ export default function SiteReceiptsPage() {
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => removeReceipt(r.id)}
+                      onClick={() => setDeleteTargetId(r.id)}
                       className="text-slate-400 hover:text-red-600"
                       title={t("delete")}
                     >
@@ -211,6 +213,53 @@ export default function SiteReceiptsPage() {
           </ul>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={!!deleteTargetId}
+        title={t("confirm")}
+        message={t("confirmDeleteReceipt")}
+        confirmLabel={t("delete")}
+        cancelLabel={t("cancel")}
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteTargetId(null)}
+      />
+
+      <Modal
+        open={isAddOpen}
+        title={t("addReceipt")}
+        onClose={() => setIsAddOpen(false)}
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <Input
+            label={t("date")}
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            required
+          />
+          <Input
+            label={t("receiptDescription")}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={t("receiptHint")}
+            autoFocus
+            required
+          />
+          <Input
+            label={t("receiptAmount")}
+            type="number"
+            min={0}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            required
+          />
+          <Button type="submit" loading={saving} fullWidth>
+            <Plus className="h-4 w-4" />
+            {t("addReceipt")}
+          </Button>
+        </form>
+      </Modal>
     </div>
   );
 }

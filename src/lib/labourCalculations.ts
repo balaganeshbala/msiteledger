@@ -42,10 +42,18 @@ export const WEEKDAY_KEYS = [
   "saturday",
 ] as const;
 
+/** Entries saved before the `worked` flag existed are all worked days. */
+export function isWorkedDay(log: { worked?: boolean }): boolean {
+  return log.worked !== false;
+}
+
 export interface WeekTotals {
   totalSalary: number;
   totalAdvance: number;
-  /** Lump sum handed to the worker on Saturday for this week. */
+  /**
+   * Lump sum handed to the worker at the end of this week. Negative when the
+   * week's advances are more than the salary earned (the worker owes it).
+   */
   netPayable: number;
 }
 
@@ -55,19 +63,4 @@ export function computeWeekTotals(
   const totalSalary = logs.reduce((sum, l) => sum + l.dailySalary, 0);
   const totalAdvance = logs.reduce((sum, l) => sum + l.extraAdvance, 0);
   return { totalSalary, totalAdvance, netPayable: totalSalary - totalAdvance };
-}
-
-/**
- * The most that can still be advanced today without pushing this week's
- * Saturday payout below zero. Weeks don't carry a balance to/from each
- * other, so this only ever looks at salary already earned within the same
- * week (today included) — not at days later in the week that may never be
- * worked.
- */
-export function maxAdvanceToday(
-  otherWeekLogs: { dailySalary: number; extraAdvance: number }[],
-  todaysSalary: number
-): number {
-  const { totalSalary, totalAdvance } = computeWeekTotals(otherWeekLogs);
-  return Math.max(0, totalSalary + todaysSalary - totalAdvance);
 }
